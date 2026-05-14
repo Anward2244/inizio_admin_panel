@@ -1,0 +1,53 @@
+import { useState, useRef, useEffect } from 'react';
+import { FiChevronDown } from 'react-icons/fi';
+
+const CustomDropdown = ({ value, onChange, options, statusColor }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div className="relative w-full" ref={dropdownRef}>
+      {/* Trigger Button */}
+      <div
+        onClick={() => setIsOpen(!isOpen)}
+        className={`w-full bg-transparent outline-none pr-8 pl-3 py-2 rounded-lg border text-xs font-bold cursor-pointer transition-all flex justify-between items-center select-none ${statusColor}`}
+      >
+        {value}
+        <FiChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''} text-current opacity-70`} />
+      </div>
+
+      {/* Options List */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-800/95 backdrop-blur-xl border border-white/10 rounded-lg shadow-xl shadow-black/60 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2">
+          {options.map((option) => (
+            <div
+              key={option}
+              onClick={() => {
+                onChange(option);
+                setIsOpen(false);
+              }}
+              className={`px-3 py-2.5 text-xs font-bold cursor-pointer transition-colors ${
+                value === option ? 'bg-blue-600 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CustomDropdown;

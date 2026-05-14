@@ -21,6 +21,7 @@ import UsersVerification from './Pages/SubMenus/Users/UsersVerification';
 import Faqs from './Pages/SubMenus/Settings/Faqs';
 import PrivacyP from './Pages/SubMenus/Settings/PrivacyP';
 import TermsAndCo from './Pages/SubMenus/Settings/TC';
+import Orders from './Pages/Orders';
 
 function App() {
   return (
@@ -44,7 +45,7 @@ function App() {
               <Route path='/banners' element={<Banners/>}/>
               <Route path='/notifications' element={<Notifications/>}/>
               <Route path="/products/variants/:id" element={<Variants />} />
-              <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<Orders />} />
               <Route path="/chat" element={<Chat/>} />
               <Route path='/users/list' element={<UsersList/>}/>
               <Route path='/users/verify' element={<UsersVerification/>}/>

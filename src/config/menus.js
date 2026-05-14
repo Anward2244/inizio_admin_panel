@@ -14,6 +14,7 @@ const PAGES = {
   BANNERS: { path: '/banners', name: 'Banners', icon: FiImage },
   NOTIFICATIONS: { path: '/notifications', name: 'Notifications', icon: FiBell },
   CHAT: { path: '/chat', name: 'Chat', icon: FiMessageCircle },
+  ORDERS: { path: '/orders', name: 'Orders', icon: FiShoppingCart },
 
 
     // --- NESTED MENUS --------------------------------------------------------------
@@ -55,6 +56,7 @@ export const getAccessibleMenus = () => {
     PAGES.DASHBOARD, 
     PAGES.USER_MGMT, 
     PAGES.PRODUCTS_CATALOG, 
+    PAGES.ORDERS,
     PAGES.BANNERS, 
     PAGES.CHAT,
     PAGES.NOTIFICATIONS, 
