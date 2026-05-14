@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* ========================================================
+   CUSTOM DARK THEME SCROLLBAR
+   ======================================================== */
+
+/* 1. Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2564eb60 transparent; /* thumb color | track color */
+}
+
+/* 2. WebKit support (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px; /* Vertical scrollbar width */
+  height: 8px; /* Horizontal scrollbar height */
+}
+
+/* The track (background) of the scrollbar */
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02); /* Very subtle glass effect */
+  border-radius: 10px;
+}
+
+/* The draggable thumb */
+::-webkit-scrollbar-thumb {
+  background: #2564eb60; /* Your electric blue */
+  border-radius: 10px;
+  border: 2px solid #000000; /* Creates a nice padding effect against the track */
+}
+
+/* Hover state for the thumb */
+::-webkit-scrollbar-thumb:hover {
+  background: #2563eb; /* A slightly brighter blue when hovered */
+}
+
+/* Hide scrollbar completely but keep functionality (Optional utility class) */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

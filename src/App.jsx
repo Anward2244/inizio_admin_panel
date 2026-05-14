@@ -1,0 +1,68 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+
+// Placeholder Pages (Create these in src/pages/)
+import Login from './pages/Auth/Login';
+import Dashboard from './pages/Dashboard';
+import ProductList from './Pages/SubMenus/Products/ProductList';
+import Category from './Pages/SubMenus/Products/Category';
+import Brands from './Pages/SubMenus/Products/Brands';
+import Banners from './Pages/Banners';
+import Notifications from './Pages/Notifications';
+import Maintenance from './Pages/SubMenus/Settings/Maintenance';
+import Profile from './Pages/Common/Profile';
+import Variants from './Pages/SubMenus/Products/Variants';
+import Cart from './Pages/Cart';
+import Chat from './Pages/Chat';
+import UsersList from './Pages/SubMenus/Users/UsersList';
+import UsersVerification from './Pages/SubMenus/Users/UsersVerification';
+import Faqs from './Pages/SubMenus/Settings/Faqs';
+import PrivacyP from './Pages/SubMenus/Settings/PrivacyP';
+import TermsAndCo from './Pages/SubMenus/Settings/TC';
+
+function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/login" element={<Login />} />
+
+          {/* BASE PROTECTION: Check if user is logged in */}
+          <Route element={<ProtectedRoute />}>
+            
+            {/* LAYOUT: Now guaranteed to have a 'user' object */}
+            <Route element={<Layout />}>
+              
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/products/list" element={<ProductList />} />
+              <Route path="/products/categories" element={<Category />} />
+              <Route path="/products/brands" element={<Brands />} />
+              <Route path='/banners' element={<Banners/>}/>
+              <Route path='/notifications' element={<Notifications/>}/>
+              <Route path="/products/variants/:id" element={<Variants />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/chat" element={<Chat/>} />
+              <Route path='/users/list' element={<UsersList/>}/>
+              <Route path='/users/verify' element={<UsersVerification/>}/>
+              <Route path="/settings/maintenance" element={<Maintenance />} />
+              <Route path="/settings/faqs" element={<Faqs/>} />
+              <Route path="/settings/privacy-policy" element={<PrivacyP/>} />
+              <Route path="/settings/terms-and-conditions" element={<TermsAndCo/>} />
+
+
+            </Route>
+          </Route>
+          
+          {/* Catch-all route: Redirect unknown URLs to Dashboard */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
+  );
+}
+
+export default App;
