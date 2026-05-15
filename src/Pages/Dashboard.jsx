@@ -2,21 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '../api/axios';
 import { FiTrendingUp, FiUsers, FiBox, FiDollarSign } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Filler,
-  Legend,
-} from 'chart.js';
-import { Line } from 'react-chartjs-2';
-
-// Register Chart.js components
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler, Legend);
+import ReactApexChart from 'react-apexcharts';
 
 const Dashboard = () => {
   const [users, setUsers] = useState([]);
@@ -24,29 +10,26 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [brands, setBrands] = useState([]);
   const [products, setProducts] = useState([]);
+  const [orders, setOrders] = useState([]);
   const navigate = useNavigate();
-
-  // Mock data metrics
-  const metrics = [
-    { title: "Total Revenue", value: "₹2,45,990", icon: FiDollarSign, color: "text-emerald-400", bg: "bg-emerald-500/20" },
-    { title: "No of Brands", value: brands.length, icon: FiTrendingUp, color: "text-blue-400", bg: "bg-blue-500/20" },
-    { title: "No of Products", value: products.length, icon: FiBox, color: "text-amber-400", bg: "bg-amber-500/20" },
-    { title: "Total Users", value: users.length, icon: FiUsers, color: "text-indigo-400", bg: "bg-indigo-500/20" },
-  ];
 
    useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('accessToken');
         const headers = { Authorization: `Bearer ${token}` };
-        const [productsResponse, brandsResponse, usersResponse] = await Promise.all([
+        const [productsResponse, brandsResponse, usersResponse, ordersResponse] = await Promise.all([
           api.get('/products/', { headers }).catch(() => ({ data: [] })),
           api.get('/brands/', { headers }).catch(() => ({ data: [] })),
-          api.get('/admin/customers', { headers }).catch(() => ({ data: [] }))
+          api.get('/admin/customers', { headers }).catch(() => ({ data: [] })),
+          api.get('/orders/all', { headers }).catch(() => ({ data: [] }))
         ]);
         setUsers(usersResponse.data);
         setProducts(productsResponse.data);
         setBrands(brandsResponse.data);
+        
+        const fetchedOrders = Array.isArray(ordersResponse.data) ? ordersResponse.data : ordersResponse.data?.orders || [];
+        setOrders(fetchedOrders);
         setLoading(false);
       } catch (err) {
         setError('Failed to load dashboard data.');
@@ -71,67 +54,132 @@ const Dashboard = () => {
     }
   }
 
-  // Chart.js Data & Options
-  const chartData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    datasets: [
-      {
-        fill: true,
-        label: 'Sales',
-        data: [42000, 38000, 55000, 48000, 69000, 85000],
-        borderColor: 'rgb(59 130 246 / 0.8)',
-        backgroundColor: (context) => {
-          const chart = context.chart;
-          const { ctx, chartArea } = chart;
-          // This ensures the gradient is only drawn when the chart area is fully available
-          if (!chartArea) return 'rgba(59, 130, 246, 0.2)';
-          const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
-          gradient.addColorStop(1, 'rgba(59, 130, 246, 0)');
-          return gradient;
-        },
-        tension: 0.4, // Smoothing the line (monotone)
-        borderWidth: 3,
-        pointRadius: 0, // Hide points by default
-        pointHoverRadius: 8,
-        pointHoverBackgroundColor: '#3b82f6',
-        pointBorderColor: 'rgba(255, 255, 255, 0.8)',
-        pointHoverBorderWidth: 2,
-      },
-    ],
+  // Process orders data for the chart (last 6 months)
+  const processChartData = () => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentDate = new Date();
+    
+    const labels = [];
+    const salesData = [0, 0, 0, 0, 0, 0];
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+      labels.push(monthNames[d.getMonth()]);
+    }
+    
+    let totalRev = 0;
+
+    orders.forEach(order => {
+      const isCancelled = order.orderStatus?.toLowerCase() === 'cancelled';
+      
+      if (order.totalAmount && !isCancelled) {
+         totalRev += order.totalAmount;
+      }
+      
+      if (order.createdAt && !isCancelled) {
+        const orderDate = new Date(order.createdAt);
+        const monthsDiff = (currentDate.getFullYear() - orderDate.getFullYear()) * 12 + (currentDate.getMonth() - orderDate.getMonth());
+        
+        if (monthsDiff >= 0 && monthsDiff <= 5) {
+          const index = 5 - monthsDiff;
+          salesData[index] += order.totalAmount || 0;
+        }
+      }
+    });
+
+    return { labels, salesData, totalRev };
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(15, 23, 42, 0.8)',
-        backdropFilter: 'blur(4px)',
-        titleColor: '#ffffff',
-        bodyColor: '#cbd5e1',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: false,
-        callbacks: {
-          label: (context) => `Sales: ₹${context.parsed.y.toLocaleString()}`,
+  const { labels: chartLabels, salesData, totalRev } = processChartData();
+
+  // Dynamic data metrics
+  const metrics = [
+    { title: "Total Revenue", value: `₹${totalRev.toLocaleString('en-IN')}`, icon: FiDollarSign, color: "text-emerald-400", bg: "bg-emerald-500/20" },
+    { title: "No of Brands", value: brands.length, icon: FiTrendingUp, color: "text-blue-400", bg: "bg-blue-500/20" },
+    { title: "No of Products", value: products.length, icon: FiBox, color: "text-amber-400", bg: "bg-amber-500/20" },
+    { title: "Total Users", value: users.length, icon: FiUsers, color: "text-indigo-400", bg: "bg-indigo-500/20" },
+  ];
+
+  // ApexCharts Data & Options
+  const apexSeries = [
+    {
+      name: 'Sales',
+      data: salesData
+    }
+  ];
+
+  const apexOptions = {
+    chart: {
+      type: 'area',
+      toolbar: { show: false },
+      background: 'transparent',
+      fontFamily: 'inherit',
+    },
+    colors: ['#3b82f6'],
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.4,
+        opacityTo: 0,
+        stops: [0, 100]
+      }
+    },
+    dataLabels: {
+      enabled: false
+    },
+    stroke: {
+      curve: 'smooth',
+      width: 3
+    },
+    markers: {
+      size: 0,
+      colors: ['#3b82f6'],
+      strokeColors: 'rgba(255, 255, 255, 0.8)',
+      strokeWidth: 2,
+      hover: {
+        size: 8,
+      }
+    },
+    xaxis: {
+      categories: chartLabels,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: {
+        style: {
+          colors: '#94a3b8',
+          fontWeight: 600,
+        }
+      }
+    },
+    yaxis: {
+      labels: {
+        style: {
+          colors: '#94a3b8',
+          fontWeight: 600,
         },
-      },
+        formatter: (value) => `₹${value / 1000}k`
+      }
     },
-    scales: {
-      x: {
-        grid: { display: false },
-        border: { display: false },
-        ticks: { color: '#94a3b8', font: { size: 12, weight: '600' } },
+    grid: {
+      borderColor: 'rgba(255, 255, 255, 0.1)',
+      strokeDashArray: 3,
+      xaxis: {
+        lines: { show: false }
       },
+      yaxis: {
+        lines: { show: true }
+      }
+    },
+    theme: {
+      mode: 'dark'
+    },
+    tooltip: {
+      theme: 'dark',
       y: {
-        grid: { color: 'rgba(255, 255, 255, 0.1)', drawBorder: false, tickLength: 0 },
-        border: { display: false, dash: [3, 3] }, // Dashed horizontal lines
-        ticks: { color: '#94a3b8', font: { size: 12, weight: '600' }, callback: (value) => `₹${value / 1000}k`, padding: 10 },
-      },
-    },
+        formatter: (val) => `₹${val.toLocaleString('en-IN')}`
+      }
+    }
   };
 
   return (
@@ -180,7 +228,7 @@ const Dashboard = () => {
           <h2 className="text-lg font-bold text-white">Electronics Sales Overview</h2>
         </div>
         <div className="relative h-80 w-full z-10">
-          <Line data={chartData} options={chartOptions} />
+          <ReactApexChart options={apexOptions} series={apexSeries} type="area" height="100%" width="100%" />
         </div>
       </div>
     </div>

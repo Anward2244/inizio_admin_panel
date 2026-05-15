@@ -43,7 +43,7 @@ const Variants = () => {
         l1Price: v.l1Price || '',
         l2Price: v.l2Price || '',
         l3Price: v.l3Price || '',
-        displayPrice: v.displayPrice || '',
+        quantityPricing: Array.isArray(v.quantityPricing) ? v.quantityPricing : [],
         image_urls: v.images ? v.images.join(', ') : ''
       })) || [];
       
@@ -63,7 +63,7 @@ const Variants = () => {
     l1Price: '',
     l2Price: '',
     l3Price: '',
-    displayPrice: '',
+    quantityPricing: [],
     image_urls: ''
   });
 
@@ -100,55 +100,95 @@ const Variants = () => {
     setVariants(newVariants);
   };
 
+  const handleAddQuantityPricing = (index) => {
+    const newVariants = [...variants];
+    if (!newVariants[index].quantityPricing) newVariants[index].quantityPricing = [];
+    newVariants[index].quantityPricing.push({ minQty: '', price: '' });
+    setVariants(newVariants);
+  };
+
+  const handleRemoveQuantityPricing = (variantIndex, qpIndex) => {
+    const newVariants = [...variants];
+    newVariants[variantIndex].quantityPricing.splice(qpIndex, 1);
+    setVariants(newVariants);
+  };
+
+  const handleQuantityPricingChange = (variantIndex, qpIndex, field, value) => {
+    const newVariants = [...variants];
+    newVariants[variantIndex].quantityPricing[qpIndex][field] = value;
+    setVariants(newVariants);
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       const token = localStorage.getItem('accessToken');
       
       // Format variants for API
-      const payloadVariants = variants.map(v => {
-        const images = (v.image_urls || '').split(',').map(url => url.trim()).filter(Boolean);
-        
-        const { image_urls, ...rest } = v;
-        
-        return {
-          ...rest,
-          name: v.name,
-          quantity: Number(v.quantity) || 0,
-          price: Number(v.price) || 0,
-          offerPrice: Number(v.offerPrice) || 0,
-          l1Price: Number(v.l1Price) || 0,
-          l2Price: Number(v.l2Price) || 0,
-          l3Price: Number(v.l3Price) || 0,
-          displayPrice: Number(v.displayPrice) || 0,
-          images
-        };
-      });
+      let payloadVariants;
+      try {
+        payloadVariants = variants.map(v => {
+          const parsedQP = (v.quantityPricing || [])
+            .map(qp => ({ minQty: Number(qp.minQty) || 0, price: Number(qp.price) || 0 }))
+            .filter(qp => qp.minQty > 0 || qp.price > 0);
+          const images = (v.image_urls || '').split(',').map(url => url.trim()).filter(Boolean);
+          
+          const { image_urls, quantityPricing, ...rest } = v;
+          
+          return {
+            ...rest,
+            name: v.name,
+            quantity: Number(v.quantity) || 0,
+            price: Number(v.price) || 0,
+            offerPrice: Number(v.offerPrice) || 0,
+            l1Price: Number(v.l1Price) || 0,
+            l2Price: Number(v.l2Price) || 0,
+            l3Price: Number(v.l3Price) || 0,
+            quantityPricing: parsedQP,
+            images
+          };
+        });
+      } catch (err) {
+        alert(err.message);
+        setSaving(false);
+        return;
+      }
 
       // Reconstruct the full product payload to satisfy backend validations
-      const payload = {
-        name: fullProduct.name,
-        description: fullProduct.description || '',
-        details: fullProduct.details || '',
-        expertNotes: fullProduct.expertNotes || '',
-        brand: typeof fullProduct.brand === 'object' ? fullProduct.brand?._id : fullProduct.brand,
-        category: typeof fullProduct.category === 'object' ? fullProduct.category?._id : fullProduct.category,
-        basePrice: Number(fullProduct.basePrice) || 0,
-        offerPrice: Number(fullProduct.offerPrice) || 0,
-        displayPrice: Number(fullProduct.displayPrice) || 0,
-        l1Price: Number(fullProduct.l1Price) || 0,
-        l2Price: Number(fullProduct.l2Price) || 0,
-        l3Price: Number(fullProduct.l3Price) || 0,
-        eanNumber: Number(fullProduct.eanNumber) || null,
-        totalQuantity: Number(fullProduct.totalQuantity) || 0,
-        cancellationPolicy: fullProduct.cancellationPolicy || '',
-        sevenDaysReturn: fullProduct.sevenDaysReturn || '',
-        warranty: fullProduct.warranty || '',
-        variants: payloadVariants
-      };
+      const formData = new FormData();
+      formData.append('name', fullProduct.name || '');
+      formData.append('description', fullProduct.description || '');
+      formData.append('details', fullProduct.details || '');
+      formData.append('expertNotes', fullProduct.expertNotes || '');
+      formData.append('basePrice', fullProduct.basePrice || 0);
+      formData.append('offerPrice', fullProduct.offerPrice || 0);
+      formData.append('l1Price', fullProduct.l1Price || 0);
+      formData.append('l2Price', fullProduct.l2Price || 0);
+      formData.append('l3Price', fullProduct.l3Price || 0);
+      formData.append('quantityPricing', JSON.stringify(fullProduct.quantityPricing || []));
+      formData.append('totalQuantity', fullProduct.totalQuantity || 0);
+      formData.append('eanNumber', fullProduct.eanNumber || '');
+      formData.append('sevenDaysReturn', fullProduct.sevenDaysReturn || '');
+      formData.append('warranty', fullProduct.warranty || '');
+      formData.append('cancellationPolicy', fullProduct.cancellationPolicy || '');
+      
+      const brandId = typeof fullProduct.brand === 'object' ? fullProduct.brand?._id : fullProduct.brand;
+      const catId = typeof fullProduct.category === 'object' ? fullProduct.category?._id : fullProduct.category;
+      
+      if (brandId) formData.append('brand', brandId);
+      if (catId) formData.append('category', catId);
+  
+      formData.append('variants', JSON.stringify(payloadVariants));
 
-      await axios.put(`${BASE_URL}/api/products/${productId}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+      if (Array.isArray(fullProduct.images)) {
+        fullProduct.images.forEach(img => formData.append('images', img));
+      }
+
+      await axios.put(`${BASE_URL}/api/products/${productId}`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
       alert('Variants updated successfully');
@@ -207,11 +247,29 @@ const Variants = () => {
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Quantity</label><input type="number" value={variant.quantity} onChange={e => handleChange(index, 'quantity', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Price</label><input type="number" value={variant.price} onChange={e => handleChange(index, 'price', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Offer Price</label><input type="number" value={variant.offerPrice} onChange={e => handleChange(index, 'offerPrice', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
-              <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Display Price</label><input type="number" value={variant.displayPrice} onChange={e => handleChange(index, 'displayPrice', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L1 Price</label><input type="number" value={variant.l1Price} onChange={e => handleChange(index, 'l1Price', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L2 Price</label><input type="number" value={variant.l2Price} onChange={e => handleChange(index, 'l2Price', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               <div><label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L3 Price</label><input type="number" value={variant.l3Price} onChange={e => handleChange(index, 'l3Price', e.target.value)} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" /></div>
               
+              <div className="sm:col-span-2 md:col-span-3 lg:col-span-5">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Quantity Pricing Slabs</label>
+                {(variant.quantityPricing || []).map((qp, qpIndex) => (
+                  <div key={qpIndex} className="flex items-center gap-3 mb-3">
+                    <div className="flex-1">
+                      <input type="number" value={qp.minQty} onChange={e => handleQuantityPricingChange(index, qpIndex, 'minQty', e.target.value)} placeholder="Minimum Quantity" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <input type="number" value={qp.price} onChange={e => handleQuantityPricingChange(index, qpIndex, 'price', e.target.value)} placeholder="Price per unit" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                    </div>
+                    <button type="button" onClick={() => handleRemoveQuantityPricing(index, qpIndex)} className="p-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-xl transition-colors shrink-0" title="Remove Slab">
+                      <FiTrash2 />
+                    </button>
+                  </div>
+                ))}
+                <button type="button" onClick={() => handleAddQuantityPricing(index)} className="px-4 py-2 mt-1 bg-blue-900/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-900/50 transition-colors border border-blue-500/30">
+                  + Add Quantity Slab
+                </button>
+              </div>
               <div className="sm:col-span-2 md:col-span-3 lg:col-span-5">
                 <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Image URLs (comma separated)</label>
                 <input type="text" value={variant.image_urls} onChange={e => handleChange(index, 'image_urls', e.target.value)} placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />

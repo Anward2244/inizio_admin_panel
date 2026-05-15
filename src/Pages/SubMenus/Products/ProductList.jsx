@@ -34,7 +34,7 @@ const ProductList = () => {
   const initialFormState = {
     name: '', description: '', details: '', expertNotes: '',
     brand: '', category: '', basePrice: '', offerPrice: '',
-    displayPrice: '', l1Price: '', l2Price: '', l3Price: '',
+    l1Price: '', l2Price: '', l3Price: '', quantityPricing: [],
     eanNumber: '', totalQuantity: '', cancellationPolicy: '',
     sevenDaysReturn: '', warranty: '', image_urls: ''
   };
@@ -65,7 +65,7 @@ const ProductList = () => {
 
     fetchData();
   }, []);
-// console.log(products)
+console.log(products)
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this Product?')) {
@@ -93,10 +93,10 @@ const ProductList = () => {
       category: product.category?._id || product.category || '',
       basePrice: product.basePrice || '',
       offerPrice: product.offerPrice || '',
-      displayPrice: product.displayPrice || '',
       l1Price: product.l1Price || '',
       l2Price: product.l2Price || '',
       l3Price: product.l3Price || '',
+      quantityPricing: Array.isArray(product.quantityPricing) ? product.quantityPricing : [],
       eanNumber: product.eanNumber || '',
       totalQuantity: product.totalQuantity || '',
       cancellationPolicy: product.cancellationPolicy || '',
@@ -119,30 +119,39 @@ const ProductList = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+
+    const parsedQuantityPricing = (editFormData.quantityPricing || [])
+      .map(qp => ({ minQty: Number(qp.minQty) || 0, price: Number(qp.price) || 0 }))
+      .filter(qp => qp.minQty > 0 || qp.price > 0);
+
     try {
       const token = localStorage.getItem('accessToken');
-      const payload = {
-        name: editFormData.name,
-        description: editFormData.description,
-        details: editFormData.details,
-        expertNotes: editFormData.expertNotes,
-        brand: editFormData.brand,
-        category: editFormData.category,
-        basePrice: Number(editFormData.basePrice) || 0,
-        offerPrice: Number(editFormData.offerPrice) || 0,
-        displayPrice: Number(editFormData.displayPrice) || 0,
-        l1Price: Number(editFormData.l1Price) || 0,
-        l2Price: Number(editFormData.l2Price) || 0,
-        l3Price: Number(editFormData.l3Price) || 0,
-        eanNumber: Number(editFormData.eanNumber) || null,
-        totalQuantity: Number(editFormData.totalQuantity) || 0,
-        cancellationPolicy: editFormData.cancellationPolicy,
-        sevenDaysReturn: editFormData.sevenDaysReturn,
-        warranty: editFormData.warranty,
-      };
       
-      const response = await axios.put(`${BASE_URL}/api/products/${editFormData._id}`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+      const formData = new FormData();
+      formData.append('name', editFormData.name || '');
+      formData.append('description', editFormData.description || '');
+      formData.append('details', editFormData.details || '');
+      formData.append('expertNotes', editFormData.expertNotes || '');
+      formData.append('basePrice', editFormData.basePrice || 0);
+      formData.append('offerPrice', editFormData.offerPrice || 0);
+      formData.append('l1Price', editFormData.l1Price || 0);
+      formData.append('l2Price', editFormData.l2Price || 0);
+      formData.append('l3Price', editFormData.l3Price || 0);
+      formData.append('quantityPricing', JSON.stringify(parsedQuantityPricing));
+      formData.append('eanNumber', editFormData.eanNumber || '');
+      formData.append('totalQuantity', editFormData.totalQuantity || 0);
+      formData.append('cancellationPolicy', editFormData.cancellationPolicy || '');
+      formData.append('sevenDaysReturn', editFormData.sevenDaysReturn || '');
+      formData.append('warranty', editFormData.warranty || '');
+
+      if (editFormData.brand) formData.append('brand', editFormData.brand);
+      if (editFormData.category) formData.append('category', editFormData.category);
+      
+      const response = await axios.put(`${BASE_URL}/api/products/${editFormData._id}`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
       const updatedProduct = response.data?.product || response.data?.data || response.data;
@@ -167,80 +176,83 @@ const ProductList = () => {
     setAddFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleQuantityPricingChange = (formType, index, field, value) => {
+    if (formType === 'edit') {
+      const newQp = [...(editFormData.quantityPricing || [])];
+      newQp[index] = { ...newQp[index], [field]: value };
+      setEditFormData(prev => ({ ...prev, quantityPricing: newQp }));
+    } else {
+      const newQp = [...(addFormData.quantityPricing || [])];
+      newQp[index] = { ...newQp[index], [field]: value };
+      setAddFormData(prev => ({ ...prev, quantityPricing: newQp }));
+    }
+  };
+
+  const handleAddQuantityPricing = (formType) => {
+    if (formType === 'edit') {
+      setEditFormData(prev => ({ ...prev, quantityPricing: [...(prev.quantityPricing || []), { minQty: '', price: '' }] }));
+    } else {
+      setAddFormData(prev => ({ ...prev, quantityPricing: [...(prev.quantityPricing || []), { minQty: '', price: '' }] }));
+    }
+  };
+
+  const handleRemoveQuantityPricing = (formType, index) => {
+    if (formType === 'edit') {
+      const newQp = [...(editFormData.quantityPricing || [])];
+      newQp.splice(index, 1);
+      setEditFormData(prev => ({ ...prev, quantityPricing: newQp }));
+    } else {
+      const newQp = [...(addFormData.quantityPricing || [])];
+      newQp.splice(index, 1);
+      setAddFormData(prev => ({ ...prev, quantityPricing: newQp }));
+    }
+  };
+
   const handleAddSubmit = async (e) => {
     e.preventDefault();
+
+    const parsedQuantityPricing = (addFormData.quantityPricing || [])
+      .map(qp => ({ minQty: Number(qp.minQty) || 0, price: Number(qp.price) || 0 }))
+      .filter(qp => qp.minQty > 0 || qp.price > 0);
+
     try {
       const token = localStorage.getItem('accessToken');
       
-      const payload = {
-        name: addFormData.name,
-        description: addFormData.description,
-        details: addFormData.details,
-        expertNotes: addFormData.expertNotes,
-        brand: addFormData.brand,
-        category: addFormData.category,
-        basePrice: Number(addFormData.basePrice) || 0,
-        offerPrice: Number(addFormData.offerPrice) || 0,
-        displayPrice: Number(addFormData.displayPrice) || 0,
-        l1Price: Number(addFormData.l1Price) || 0,
-        l2Price: Number(addFormData.l2Price) || 0,
-        l3Price: Number(addFormData.l3Price) || 0,
-        eanNumber: Number(addFormData.eanNumber) || null,
-        totalQuantity: Number(addFormData.totalQuantity) || 0,
-        cancellationPolicy: addFormData.cancellationPolicy,
-        sevenDaysReturn: addFormData.sevenDaysReturn,
-        warranty: addFormData.warranty,
-        images: addFormData.image_urls ? addFormData.image_urls.split(',').map(url => url.trim()).filter(Boolean) : []
-      };
+      const formData = new FormData();
+      formData.append('name', addFormData.name || '');
+      formData.append('description', addFormData.description || '');
+      formData.append('details', addFormData.details || '');
+      formData.append('expertNotes', addFormData.expertNotes || '');
+      formData.append('basePrice', addFormData.basePrice || 0);
+      formData.append('offerPrice', addFormData.offerPrice || 0);
+      formData.append('l1Price', addFormData.l1Price || 0);
+      formData.append('l2Price', addFormData.l2Price || 0);
+      formData.append('l3Price', addFormData.l3Price || 0);
+      formData.append('quantityPricing', JSON.stringify(parsedQuantityPricing));
+      formData.append('eanNumber', addFormData.eanNumber || '');
+      formData.append('totalQuantity', addFormData.totalQuantity || 0);
+      formData.append('cancellationPolicy', addFormData.cancellationPolicy || '');
+      formData.append('sevenDaysReturn', addFormData.sevenDaysReturn || '');
+      formData.append('warranty', addFormData.warranty || '');
 
-      const response = await axios.post(`${BASE_URL}/api/products/`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
+      if (addFormData.brand) formData.append('brand', addFormData.brand);
+      if (addFormData.category) formData.append('category', addFormData.category);
+
+      const imageUrls = addFormData.image_urls ? addFormData.image_urls.split(',').map(url => url.trim()).filter(Boolean) : [];
+      imageUrls.forEach(url => formData.append('images', url));
+
+      addProductImageFiles.forEach(file => {
+        formData.append('images', file);
       });
 
-      let addedProduct = response.data?.product || response.data?.data || response.data;
+      const response = await axios.post(`${BASE_URL}/api/products/`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
 
-      // If there are file uploads, handle them via a secondary PUT request
-      if (addProductImageFiles.length > 0 && addedProduct?._id) {
-        const imgFormData = new FormData();
-        imgFormData.append('name', addedProduct.name);
-        imgFormData.append('description', addedProduct.description || '');
-        imgFormData.append('details', addedProduct.details || '');
-        imgFormData.append('expertNotes', addedProduct.expertNotes || '');
-        imgFormData.append('basePrice', addedProduct.basePrice || 0);
-        imgFormData.append('offerPrice', addedProduct.offerPrice || 0);
-        imgFormData.append('displayPrice', addedProduct.displayPrice || 0);
-        imgFormData.append('l1Price', addedProduct.l1Price || 0);
-        imgFormData.append('l2Price', addedProduct.l2Price || 0);
-        imgFormData.append('l3Price', addedProduct.l3Price || 0);
-        imgFormData.append('totalQuantity', addedProduct.totalQuantity || 0);
-        imgFormData.append('eanNumber', addedProduct.eanNumber || '');
-        imgFormData.append('sevenDaysReturn', addedProduct.sevenDaysReturn || '');
-        imgFormData.append('warranty', addedProduct.warranty || '');
-        imgFormData.append('cancellationPolicy', addedProduct.cancellationPolicy || '');
-        
-        const brandId = typeof addedProduct.brand === 'object' ? addedProduct.brand?._id : addedProduct.brand;
-        const catId = typeof addedProduct.category === 'object' ? addedProduct.category?._id : addedProduct.category;
-        
-        if (brandId) imgFormData.append('brand', brandId);
-        if (catId) imgFormData.append('category', catId);
-    
-        const v = addedProduct.variants || [];
-        imgFormData.append('variants', JSON.stringify(v));
-
-        addProductImageFiles.forEach(file => {
-          imgFormData.append('images', file);
-        });
-
-        const imgResponse = await axios.put(`${BASE_URL}/api/products/${addedProduct._id}`, imgFormData, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        addedProduct = imgResponse.data?.product || imgResponse.data?.data || imgResponse.data;
-      }
-
+      const addedProduct = response.data?.product || response.data?.data || response.data;
       setProducts([addedProduct, ...products]);
       closeAddModal();
     } catch (error) {
@@ -301,10 +313,10 @@ const ProductList = () => {
       formData.append('expertNotes', currentProductForImages.expertNotes || '');
       formData.append('basePrice', currentProductForImages.basePrice || 0);
       formData.append('offerPrice', currentProductForImages.offerPrice || 0);
-      formData.append('displayPrice', currentProductForImages.displayPrice || 0);
       formData.append('l1Price', currentProductForImages.l1Price || 0);
       formData.append('l2Price', currentProductForImages.l2Price || 0);
       formData.append('l3Price', currentProductForImages.l3Price || 0);
+      formData.append('quantityPricing', JSON.stringify(currentProductForImages.quantityPricing || []));
       formData.append('totalQuantity', currentProductForImages.totalQuantity || 0);
       formData.append('eanNumber', currentProductForImages.eanNumber || '');
       formData.append('sevenDaysReturn', currentProductForImages.sevenDaysReturn || '');
@@ -471,7 +483,6 @@ const ProductList = () => {
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Product Name</th>
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Base Price</th>
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Offer Price</th>
-                <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Display Price</th>
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Total Qty</th>
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">EAN</th>
                 <th className="px-4 py-3 font-medium uppercase tracking-wider text-xs">Description</th>
@@ -482,7 +493,7 @@ const ProductList = () => {
             <tbody className="divide-y divide-white/10">
               {loading ? (
                 <tr>
-                  <td colSpan="17" className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan="16" className="px-6 py-12 text-center text-slate-400 font-medium">
                     <FiLoader className="animate-spin text-3xl mx-auto mb-3 text-blue-400" />
                     Loading products...
                   </td>
@@ -505,7 +516,6 @@ const ProductList = () => {
                       <td className="px-4 py-3 text-sm text-white font-bold">{product.name || '-'}</td>
                       <td className="px-4 py-3 text-sm text-slate-400 font-bold">{product.basePrice ?? '-'}</td>
                       <td className="px-4 py-3 text-sm text-emerald-400 font-bold">{product.offerPrice ?? '-'}</td>
-                      <td className="px-4 py-3 text-sm text-slate-400">{product.displayPrice ?? '-'}</td>
                       <td className="px-4 py-3 text-sm text-slate-400">{product.totalQuantity ?? '-'}</td>
                       <td className="px-4 py-3 text-sm text-slate-400">{product.eanNumber ?? '-'}</td>
                       <td className="px-4 py-3 text-sm text-slate-400 max-w-xs truncate" title={product.description}>
@@ -532,7 +542,7 @@ const ProductList = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="17" className="px-6 py-12 text-center text-slate-400 font-medium">
+                  <td colSpan="16" className="px-6 py-12 text-center text-slate-400 font-medium">
                     {searchTerm ? 'No products matching your search.' : 'No products found. Add your first product.'}
                   </td>
                 </tr>
@@ -628,16 +638,31 @@ const ProductList = () => {
                   <input type="number" name="offerPrice" value={editFormData.offerPrice || ''} onChange={handleEditChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Display Price</label>
-                  <input type="number" name="displayPrice" value={editFormData.displayPrice || ''} onChange={handleEditChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
-                </div>
-                <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L1 Price</label>
                   <input type="number" name="l1Price" value={editFormData.l1Price || ''} onChange={handleEditChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L2 Price</label>
                   <input type="number" name="l2Price" value={editFormData.l2Price || ''} onChange={handleEditChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Quantity Pricing Slabs</label>
+                  {(editFormData.quantityPricing || []).map((qp, qpIndex) => (
+                    <div key={qpIndex} className="flex items-center gap-3 mb-3">
+                      <div className="flex-1">
+                        <input type="number" value={qp.minQty} onChange={e => handleQuantityPricingChange('edit', qpIndex, 'minQty', e.target.value)} placeholder="Minimum Quantity" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <input type="number" value={qp.price} onChange={e => handleQuantityPricingChange('edit', qpIndex, 'price', e.target.value)} placeholder="Price per unit" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                      </div>
+                      <button type="button" onClick={() => handleRemoveQuantityPricing('edit', qpIndex)} className="p-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-xl transition-colors shrink-0" title="Remove Slab">
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => handleAddQuantityPricing('edit')} className="px-4 py-2 mt-1 bg-blue-900/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-900/50 transition-colors border border-blue-500/30">
+                    + Add Quantity Slab
+                  </button>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L3 Price</label>
@@ -744,16 +769,31 @@ const ProductList = () => {
                   <input type="number" name="offerPrice" value={addFormData.offerPrice} onChange={handleAddChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Display Price</label>
-                  <input type="number" name="displayPrice" value={addFormData.displayPrice} onChange={handleAddChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
-                </div>
-                <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L1 Price</label>
                   <input type="number" name="l1Price" value={addFormData.l1Price} onChange={handleAddChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L2 Price</label>
                   <input type="number" name="l2Price" value={addFormData.l2Price} onChange={handleAddChange} className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500" />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Quantity Pricing Slabs</label>
+                  {(addFormData.quantityPricing || []).map((qp, qpIndex) => (
+                    <div key={qpIndex} className="flex items-center gap-3 mb-3">
+                      <div className="flex-1">
+                        <input type="number" value={qp.minQty} onChange={e => handleQuantityPricingChange('add', qpIndex, 'minQty', e.target.value)} placeholder="Minimum Quantity" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <input type="number" value={qp.price} onChange={e => handleQuantityPricingChange('add', qpIndex, 'price', e.target.value)} placeholder="Price per unit" className="w-full px-4 py-2.5 bg-slate-900/50 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-sm font-medium placeholder-slate-500 text-white" />
+                      </div>
+                      <button type="button" onClick={() => handleRemoveQuantityPricing('add', qpIndex)} className="p-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-xl transition-colors shrink-0" title="Remove Slab">
+                        <FiTrash2 />
+                      </button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => handleAddQuantityPricing('add')} className="px-4 py-2 mt-1 bg-blue-900/30 text-blue-400 text-xs font-bold rounded-lg hover:bg-blue-900/50 transition-colors border border-blue-500/30">
+                    + Add Quantity Slab
+                  </button>
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">L3 Price</label>
