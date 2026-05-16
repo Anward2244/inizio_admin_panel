@@ -52,6 +52,9 @@ const Dashboard = () => {
     else if(index === 3) {
       navigate('/users/list');
     }
+    else if(index === 0){
+      navigate('/orders');
+    }
   }
 
   // Process orders data for the chart (last 6 months)
