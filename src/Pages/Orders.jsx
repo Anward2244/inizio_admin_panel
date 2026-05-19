@@ -108,7 +108,7 @@ const Orders = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
             <FiBox className="text-blue-400" /> Orders Management
           </h1>
           <p className="text-slate-400 font-medium mt-1">View and manage customer order fulfillment statuses.</p>
@@ -129,8 +129,8 @@ const Orders = () => {
       )}
 
       {!loading && !error && (
-        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 rounded-3xl overflow-hidden">
-          <div className="overflow-x-auto custom-scrollbar">
+        <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 rounded-2xl md:rounded-3xl overflow-hidden">
+          <div className="overflow-x-auto custom-scrollbar touch-pan-x">
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-white/10 bg-black/20 text-xs font-bold text-slate-400 uppercase tracking-wider">
@@ -204,7 +204,7 @@ const Orders = () => {
                       </button>
                     </td>
                     <td className="p-4 pr-6">
-                      <div className="relative inline-block w-full max-w-[140px]">
+                      <div className="relative inline-block w-full min-w-[140px]">
                         {updatingId === order._id ? (
                           <div className="flex items-center justify-center gap-2 px-3 py-2 text-xs font-bold text-slate-400 bg-black/20 border border-white/5 rounded-lg w-full">
                             <FiLoader className="animate-spin" /> Updating
@@ -234,11 +234,11 @@ const Orders = () => {
           </div>
 
           {orders.length > itemsPerPage && (
-            <div className="p-4 border-t border-white/10 flex justify-between items-center bg-black/20">
-              <span className="text-sm text-slate-400">
+            <div className="p-4 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20">
+              <span className="text-sm text-slate-400 text-center sm:text-left">
                 Showing <span className="font-bold text-white">{indexOfFirstItem + 1}</span> to <span className="font-bold text-white">{Math.min(indexOfLastItem, orders.length)}</span> of <span className="font-bold text-white">{orders.length}</span> orders
               </span>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto justify-center sm:justify-end">
                 <button
                   onClick={handlePrevPage}
                   disabled={currentPage === 1}
@@ -264,7 +264,7 @@ const Orders = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={closeModal}></div>
           
-          <div className="relative bg-slate-900 border border-white/10 shadow-2xl rounded-3xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative bg-slate-900 border border-white/10 shadow-2xl rounded-2xl md:rounded-3xl w-full max-w-5xl h-[90vh] md:h-[85vh] max-h-[95vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             
             {/* Modal Header */}
             <div className="px-4 sm:px-6 py-4 sm:py-5 border-b border-white/10 flex justify-between items-center bg-slate-800/50 shrink-0">

@@ -105,9 +105,15 @@ const Layout = () => {
       {/* SIDEBAR */}
       <aside className={`
         fixed inset-y-0 left-0 z-50 w-72 bg-white/5 backdrop-blur-2xl border-r border-white/10 flex flex-col shadow-2xl shadow-black/50 lg:shadow-none
-        transform transition-transform duration-300 ease-in-out lg:static lg:translate-x-0
+        transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 overflow-hidden
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
+        {/* Sidebar Ambient Glows */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none z-[-1]">
+          <div className="absolute top-[10%] -left-[20%] w-64 h-64 bg-blue-500/20 rounded-full mix-blend-screen filter blur-[80px] opacity-60"></div>
+          <div className="absolute bottom-[20%] -right-[20%] w-72 h-72 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] opacity-50"></div>
+        </div>
+
         <div className="h-16 flex items-center justify-center px-6 border-b border-white/10 bg-transparent shrink-0">
           <img src={logoImg} alt="logo" className="h-14 w-auto object-contain scale-200 mt-1.5" />
           <button 

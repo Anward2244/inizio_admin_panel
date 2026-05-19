@@ -5,7 +5,7 @@ import {
   FiBookOpen, FiPercent, FiSend, FiEye, FiArchive,
   FiCreditCard, FiNavigation, FiPaperclip, FiAlertTriangle,
   FiImage, FiBell, FiPackage, FiTag, FiGrid, FiTool, FiMessageCircle,
-  FiUserCheck, FiUser, FiHelpCircle
+  FiUserCheck, FiUser, FiHelpCircle, FiFile
 } from 'react-icons/fi';
 
 const PAGES = {
@@ -15,6 +15,7 @@ const PAGES = {
   NOTIFICATIONS: { path: '/notifications', name: 'Notifications', icon: FiBell },
   CHAT: { path: '/chat', name: 'Chat', icon: FiMessageCircle },
   ORDERS: { path: '/orders', name: 'Orders', icon: FiShoppingCart },
+  LEDGERS: {path: '/ledgers', name: 'Ledgers', icon: FiFile},
 
 
     // --- NESTED MENUS --------------------------------------------------------------
@@ -57,6 +58,7 @@ export const getAccessibleMenus = () => {
     PAGES.USER_MGMT, 
     PAGES.PRODUCTS_CATALOG, 
     PAGES.ORDERS,
+    PAGES.LEDGERS,
     PAGES.BANNERS, 
     PAGES.CHAT,
     PAGES.NOTIFICATIONS, 

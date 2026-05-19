@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiEdit2, FiTrash2, FiPlus, FiLoader, FiSearch, FiUpload, FiX, FiSave, FiImage } from 'react-icons/fi';
@@ -407,7 +408,7 @@ console.log(products)
       <div className="flex flex-col gap-6 mb-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">Product List</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">Product List</h1>
             <p className="text-slate-400 font-medium mt-1">View and manage all products in your catalog.</p>
           </div>
           <div className="relative w-full sm:w-72">
@@ -464,8 +465,8 @@ console.log(products)
       </div>
 
       {/* Table Section */}
-      <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 rounded-3xl overflow-hidden flex flex-col h-full">
-        <div className="overflow-x-auto custom-scrollbar">
+      <div className="bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl shadow-black/50 rounded-2xl md:rounded-3xl overflow-hidden flex flex-col h-full">
+        <div className="overflow-x-auto custom-scrollbar touch-pan-x">
           <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead className="bg-slate-800/50 border-b border-white/10 border-collapse text-slate-300 text-sm">
               <tr>
@@ -553,7 +554,7 @@ console.log(products)
 
         {/* Pagination */}
         {!loading && filteredProducts.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-4 justify-end items-center px-6 py-4 border-t border-white/10 bg-slate-800/50">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center sm:justify-end items-center px-4 sm:px-6 py-4 border-t border-white/10 bg-slate-800/50">
             {/* <span className="text-sm text-slate-400">
               Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredProducts.length)} of {filteredProducts.length} entries
             </span> */}
@@ -570,7 +571,7 @@ console.log(products)
               >
                 Previous
               </button>
-              <p className='py-1.5 text-slate-500'>Page <span className='text-white bold text-lg'>{currentPage}</span> of {totalPages}</p>
+              <p className='py-1.5 text-slate-500 text-sm'>Page <span className='text-white font-bold text-base md:text-lg'>{currentPage}</span> of {totalPages}</p>
               <button 
                 onClick={() => {
                   setSearchParams(prev => {
@@ -589,9 +590,10 @@ console.log(products)
       </div>
 
       {/* Edit Product Modal */}
-      {isEditModalOpen && editFormData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      {isEditModalOpen && editFormData && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={closeEditModal}></div>
+          <div className="relative bg-slate-900 border border-white/10 rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col h-[90vh] md:h-[85vh] max-h-[95vh] animate-in fade-in zoom-in-95 duration-200">
             
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-slate-800/50">
               <div className="flex items-center gap-3">
@@ -699,17 +701,17 @@ console.log(products)
               </form>
             </div>
             
-            <div className="px-6 py-4 border-t border-white/10 bg-slate-800/50 flex justify-between gap-3 shrink-0">
+            <div className="px-4 sm:px-6 py-4 border-t border-white/10 bg-slate-800/50 flex flex-col sm:flex-row justify-between gap-3 shrink-0">
               <button 
                 type="button"
                 onClick={() => navigate(`/products/variants/${editFormData._id}`)}
-                className="px-5 py-2.5 bg-indigo-900/30 text-indigo-400 font-bold rounded-xl hover:bg-indigo-900/50 transition-colors border border-indigo-500/30"
+                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-900/30 text-indigo-400 font-bold rounded-xl hover:bg-indigo-900/50 transition-colors border border-indigo-500/30"
               >
                 Add / Manage Variants
               </button>
-              <div className="flex gap-3">
-                <button type="button" onClick={closeEditModal} className="px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors">Cancel</button>
-                <button type="submit" form="editProductForm" className="flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
+              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                <button type="button" onClick={closeEditModal} className="w-full sm:w-auto px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors">Cancel</button>
+                <button type="submit" form="editProductForm" className="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
                   <FiSave className="mr-2" />
                   Save Changes
                 </button>
@@ -717,12 +719,13 @@ console.log(products)
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Add Product Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      {isAddModalOpen && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={closeAddModal}></div>
+          <div className="relative bg-slate-900 border border-white/10 rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col h-[90vh] md:h-[85vh] max-h-[95vh] animate-in fade-in zoom-in-95 duration-200">
             
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-slate-800/50">
               <div className="flex items-center gap-3">
@@ -876,21 +879,22 @@ console.log(products)
               </form>
             </div>
             
-            <div className="px-6 py-4 border-t border-white/10 bg-slate-800/50 flex justify-end gap-3 shrink-0">
-              <button onClick={closeAddModal} className="px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors">Cancel</button>
-              <button type="submit" form="addProductForm" className="flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
+            <div className="px-4 sm:px-6 py-4 border-t border-white/10 bg-slate-800/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+              <button onClick={closeAddModal} className="w-full sm:w-auto px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors">Cancel</button>
+              <button type="submit" form="addProductForm" className="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30">
                 <FiPlus className="mr-2" />
                 Add Product
               </button>
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {/* Image Modal */}
-      {isImageModalOpen && currentProductForImages && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-white/10 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
+      {isImageModalOpen && currentProductForImages && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setIsImageModalOpen(false)}></div>
+          <div className="relative bg-slate-900 border border-white/10 rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col h-[90vh] md:h-[85vh] max-h-[95vh] animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-slate-800/50">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-900/50 text-blue-400 flex items-center justify-center text-lg">
@@ -958,16 +962,16 @@ console.log(products)
               </div>
             </div>
             
-            <div className="px-6 py-4 border-t border-white/10 bg-slate-800/50 flex justify-end gap-3 shrink-0">
-              <button onClick={() => setIsImageModalOpen(false)} className="px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
-              <button onClick={handleImageSave} className="flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 cursor-pointer">
+            <div className="px-4 sm:px-6 py-4 border-t border-white/10 bg-slate-800/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
+              <button onClick={() => setIsImageModalOpen(false)} className="w-full sm:w-auto px-5 py-2.5 text-slate-300 font-bold rounded-xl hover:bg-slate-800 transition-colors cursor-pointer">Cancel</button>
+              <button onClick={handleImageSave} className="w-full sm:w-auto flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 cursor-pointer">
                 <FiSave className="mr-2" />
                 Save Images
               </button>
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </div>
   );
 };

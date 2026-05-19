@@ -22,6 +22,7 @@ import Faqs from './Pages/SubMenus/Settings/Faqs';
 import PrivacyP from './Pages/SubMenus/Settings/PrivacyP';
 import TermsAndCo from './Pages/SubMenus/Settings/TC';
 import Orders from './Pages/Orders';
+import { Ledgers } from './Pages/Ledgers';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
               <Route path='/notifications' element={<Notifications/>}/>
               <Route path="/products/variants/:id" element={<Variants />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/ledgers" element={<Ledgers />} />
               <Route path="/chat" element={<Chat/>} />
               <Route path='/users/list' element={<UsersList/>}/>
               <Route path='/users/verify' element={<UsersVerification/>}/>

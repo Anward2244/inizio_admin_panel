@@ -1,11 +1,12 @@
 {
-  "name": "rolebased-admin",
+  "name": "inizio",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "host": "react-scripts start --host 0.0.0.0",
     "lint": "eslint .",
     "preview": "vite preview"
   },
